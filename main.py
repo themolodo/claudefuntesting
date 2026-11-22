@@ -14,8 +14,8 @@ OUT = "/output/entry.png"
 # Geometry (pixels)
 CX, CY = 512.0, 478.0          # centre of the cut face
 R = 352.0                      # radius of the cut face (outer peel edge)
-BX, BY = 512.0, 512.0          # centre of the fruit body (dome below the face)
-BR = 356.0
+BX, BY = 516.0, 520.0          # centre of the fruit body (dome below the face)
+BR = 350.0
 SEG = 11                       # segments
 ROT = 0.23                     # segment rotation
 
@@ -57,9 +57,9 @@ def vnoise(x, y, s=0):
 
 # Water droplets on the cut face / peel: (x, y, radius)
 DROPS = [
-    (300, 380, 15), (690, 330, 11), (612, 640, 17), (402, 610, 9),
-    (735, 560, 13), (468, 300, 8), (560, 405, 7), (350, 510, 10),
-    (812, 470, 9), (230, 560, 10), (655, 760, 12), (380, 745, 9),
+    (300, 372, 22), (690, 322, 16), (612, 632, 25), (405, 602, 13),
+    (735, 552, 18), (470, 292, 11), (566, 400, 9), (348, 505, 14),
+    (318, 410, 8), (650, 650, 9), (222, 600, 13), (660, 822, 15), (392, 818, 11),
 ]
 
 TWO_PI = 2 * math.pi
@@ -75,7 +75,7 @@ def background(x, y):
     d = math.sqrt(dx * dx + dy * dy)
     v = clamp(1.0 - d * 1.05)
     v = v * v
-    base = mix((10, 8, 8), (58, 42, 36), v)
+    base = mix((16, 11, 10), (104, 70, 52), v)
     # contact shadow under the fruit (soft ellipse, offset down-right)
     sx, sy = (x - 540) / 400.0, (y - 600) / 330.0
     sd = math.sqrt(sx * sx + sy * sy)
@@ -97,14 +97,15 @@ def peel_body(x, y):
     n1 = vnoise(x * 0.11, y * 0.11, 5)
     n2 = vnoise(x * 0.23, y * 0.23, 6)
     bump = (n1 - 0.5) * 0.5 + (n2 - 0.5) * 0.25
-    lam = clamp(nx * LX + ny * LY + nz * 0.55 + 0.25 + bump * 0.25)
-    col = mix((70, 12, 6), (232, 92, 30), lam)
+    lam = clamp(nx * LX + ny * LY + nz * 0.55 + 0.05 + bump * 0.25)
+    lam *= 0.55 + 0.45 * clamp(1.2 - ny * 1.3)
+    col = mix((40, 6, 4), (215, 78, 24), lam)
     # reddish blush typical of blood orange peel
     blush = vnoise(x * 0.008, y * 0.008, 9)
     col = mix(col, (col[0] * 0.95, col[1] * 0.55, col[2] * 0.6), blush * 0.6)
     # rim light on the right edge
     rim = smooth(0.80, 1.0, math.sqrt(rr)) * clamp(nx * 1.2)
-    col = mix(col, (255, 190, 140), rim * 0.45)
+    col = mix(col, (255, 170, 120), rim * 0.25)
     # glossy speculars on the peel (tiny, from dimples)
     spec = clamp((n2 - 0.72) * 5) * clamp(-ny * 0.6 + nx * 0.2 + 0.4)
     col = mix(col, (255, 230, 200), spec * 0.35)
@@ -118,8 +119,8 @@ def cut_face(x, y):
     th = math.atan2(dy, dx)
 
     # ---- rind ring (outer) ----
-    if rn > 0.935:
-        t = (rn - 0.935) / 0.065
+    if rn > 0.945:
+        t = (rn - 0.945) / 0.055
         n = vnoise(th * 60, rn * 30, 2)
         col = mix((236, 122, 44), (178, 50, 18), smooth(0.2, 1.0, t))
         col = mix(col, (150, 30, 14), (n - 0.5) * 0.4 + 0.1)
@@ -128,22 +129,22 @@ def cut_face(x, y):
         col = mix(col, (255, 170, 90), clamp((dx * LX + dy * LY) / r) * 0.35)
         return col
     # ---- pith ----
-    if rn > 0.875:
-        t = (rn - 0.875) / 0.06
+    if rn > 0.905:
+        t = (rn - 0.905) / 0.04
         n = vnoise(th * 90, rn * 40, 4)
-        col = mix((236, 186, 150), (250, 222, 190), t)
-        col = mix(col, (218, 120, 92), (1 - t) * 0.5 + (n - 0.5) * 0.2)
+        col = mix((228, 150, 118), (246, 206, 168), t)
+        col = mix(col, (200, 70, 56), (1 - t) * 0.55 + (n - 0.5) * 0.25)
         return col
 
     # ---- flesh ----
-    a = (th - ROT) % TWO_PI
+    a = (th - ROT + 0.012 * math.sin(rn * 17.0 + th * 3) + (vnoise(rn * 9, th * 4, 12) - 0.5) * 0.025) % TWO_PI
     k = int(a / SEG_W)
     u = (a - k * SEG_W) / SEG_W          # 0..1 across segment
     # membrane between segments: width in pixels roughly constant
     arc_d = min(u, 1 - u) * SEG_W * r    # px distance to membrane
-    mem = 1.0 - smooth(1.2, 3.6, arc_d + 0.6)
+    mem = (1.0 - smooth(0.6, 2.6 + 1.2 * rn, arc_d)) * (0.55 + 0.45 * rn)
     # outer membrane along pith, and central core
-    edge_d = (0.875 - rn) * R
+    edge_d = (0.905 - rn) * R
     mem = max(mem, 1.0 - smooth(1.0, 5.0, edge_d))
     core = 1.0 - smooth(0.035, 0.085, rn + 0.012 * math.sin(th * SEG))
 
@@ -159,26 +160,32 @@ def cut_face(x, y):
     base = mix(base, orng, clamp(tone * 0.55 + (streak - 0.55) * 1.1) * (0.35 + 0.5 * g))
 
     # ---- juice vesicles: elongated radial cells ----
-    cell_r = 15.0
-    ri = r / cell_r
+    wr = (vnoise(x * 0.05, y * 0.05, 13) - 0.5) * 9.0
+    cell_r = 13.0 + 9.0 * rn
+    ri = (r + wr) / cell_r
     ii = math.floor(ri)
-    across = u * SEG_W * r
-    cell_w = 7.5
+    across = u * SEG_W * r + (vnoise(x * 0.06, y * 0.06, 14) - 0.5) * 6.0
+    cell_w = 6.5 + 3.5 * rn
     jj = math.floor(across / cell_w + hash2(ii, k, 1) * 0.9)
     fr = ri - ii
     fa = across / cell_w + hash2(ii, k, 1) * 0.9 - jj
     ex = (fa - 0.5) * 2.0
     ey = (fr - 0.5) * 2.0
-    vd = math.sqrt(ex * ex * 1.1 + ey * ey * 0.9)
+    asp = 0.8 + 0.5 * hash2(ii, jj, 5)
+    ey2 = ey + 0.25 * ex * ex  # teardrop bend
+    vd = math.sqrt(ex * ex * asp + ey2 * ey2 * 0.85)
     vh = hash2(ii, jj + k * 97, 2)
-    inside = 1.0 - smooth(0.62, 1.0, vd)
+    inside = 1.0 - smooth(0.45, 1.05, vd)
     # translucent juicy shading: bright core, darker borders
-    shade = 0.70 + 0.42 * inside + (vh - 0.5) * 0.18
+    shade = 0.80 + 0.30 * inside + (vh - 0.5) * 0.22
     col = (base[0] * shade, base[1] * shade, base[2] * shade)
     # vesicle highlight (upper-left of each cell)
     hx, hy = ex + 0.35, ey + 0.35
     hl = 1.0 - smooth(0.0, 0.45, math.sqrt(hx * hx + hy * hy))
-    col = mix(col, (255, 170, 150), hl * 0.28 * inside)
+    col = mix(col, (255, 190, 170), hl * 0.38 * inside * (0.4 + 0.6 * vh))
+    sx, sy = (x - CX) / R + 0.36, (y - CY) / R + 0.40
+    wet = math.exp(-(sx * sx * 2.2 + sy * sy * 4.0) * 2.0)
+    col = mix(col, (255, 245, 235), clamp(hl * inside * wet * 1.6 * (0.3 + vh)))
 
     # inner glow: subsurface warmth near centre
     glow = (1 - smooth(0.0, 0.55, rn)) * 0.25
@@ -199,7 +206,7 @@ def face_lighting(x, y, col):
     # key light falloff across face
     lit = 0.88 + 0.22 * clamp(-(dx * 0.6 + dy * 0.75))
     col = (col[0] * lit, col[1] * lit, col[2] * lit)
-    col = mix(col, (255, 236, 222), sheen * 0.30)
+    col = mix(col, (255, 236, 222), sheen * 0.20)
     return col
 
 
@@ -216,7 +223,7 @@ def drop_shade(x, y, col):
         nx, ny = dx / pr, dy / pr
         inner = mix(col, (min(255, col[0] * 1.25 + 20), min(255, col[1] * 1.25 + 12), min(255, col[2] * 1.2 + 12)), 0.8)
         edge = smooth(0.55, 1.0, d) * clamp(0.5 + 0.7 * (nx * 0.6 + ny * 0.8))
-        inner = mix(inner, (col[0] * 0.35, col[1] * 0.3, col[2] * 0.3), edge * 0.7)
+        inner = mix(inner, (col[0] * 0.25, col[1] * 0.2, col[2] * 0.2), edge * 0.85)
         # bright caustic at lower-right inside
         cx2, cy2 = nx - 0.45, ny - 0.45
         caus = 1.0 - smooth(0.0, 0.35, math.sqrt(cx2 * cx2 + cy2 * cy2))
@@ -264,8 +271,9 @@ def gamma_boost(c):
 def write_png(path, rows):
     raw = bytearray()
     for row in rows:
-        raw.append(0)
-        raw.extend(row)
+        raw.append(1)  # Sub filter: smaller file for smooth gradients
+        prev = bytes(3) + bytes(row[:-3])
+        raw.extend(bytes((a - b) & 0xFF for a, b in zip(row, prev)))
     def chunk(tag, data):
         c = struct.pack(">I", len(data)) + tag + data
         return c + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
