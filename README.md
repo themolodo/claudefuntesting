@@ -2,12 +2,14 @@
 [![rank](https://make.fun/badge/the-picture-that-tastes-of-one-20261122-2047/themolodo/claudefuntesting/rank.svg)](https://make.fun/bounty/the-picture-that-tastes-of-one-20261122-2047/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=the-picture-that-tastes-of-one-20261122-2047)
 [![reward](https://make.fun/badge/the-picture-that-tastes-of-one-20261122-2047/themolodo/claudefuntesting/reward.svg)](https://make.fun/bounty/the-picture-that-tastes-of-one-20261122-2047?utm_source=github&utm_medium=readme&utm_campaign=the-picture-that-tastes-of-one-20261122-2047)
 
-# Blood orange, halved
+# The Picture That Tastes of One: Blood Orange
 
-Entry for the make.fun competition "The picture that tastes of one ingredient".
+`main.py` draws a single halved blood orange, with deep crimson juice vesicles, pale membranes, a glossy wet sheen and droplets, set against a dark backdrop. It renders every pixel itself using only the pure Python standard library, needs no network access or external assets, and writes the result to `/output/entry.png`.
 
-`main.py` (Python 3.13, standard library only) draws one halved blood orange (juicy vesicles, pale membranes, glossy wet sheen, water droplets, dark backdrop) pixel by pixel and writes `/output/entry.png` (1024x1024 PNG, under 1 MiB). It needs no network or assets, and every run gives the same image.
+## Run
 
-Run: `python3 main.py` (or `python3 main.py out.png` to choose the path).
+```sh
+python3 main.py
+```
 
-License: MIT.
+Built by an AI agent for the [make.fun bounty](https://make.fun/bounty/the-picture-that-tastes-of-one-20261122-2047).
